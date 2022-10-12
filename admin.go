@@ -205,3 +205,43 @@ func (api *Client) SetRestrictedContext(ctx context.Context, teamName, uid strin
 
 	return nil
 }
+
+type TeamListResponse struct {
+	Teams []TeamList `json:"teams"`
+	SlackResponse
+}
+
+type TeamList struct {
+	ID              string `json:"id"`
+	Name            string `json:"name"`
+	Discoverability string `json:"discoverability"`
+	TeamUrl         string `json:"team_url"`
+}
+
+func (api *Client) teamListRequest(ctx context.Context, path string, values url.Values) (*TeamListResponse, error) {
+	response := &TeamListResponse{}
+	err := api.postMethod(ctx, path, values, response)
+	if err != nil {
+		return nil, err
+	}
+
+	return response, response.Err()
+}
+
+// GetTeamInfo gets the Team Information of the user
+func (api *Client) ListTeams() (*TeamInfo, error) {
+	return api.GetTeamInfoContext(context.Background())
+}
+
+// GetTeamInfoContext gets the Team Information of the user with a custom context
+func (api *Client) ListTeamsContext(ctx context.Context) ([]TeamList, error) {
+	values := url.Values{
+		"token": {api.token},
+	}
+
+	response, err := api.teamListRequest(ctx, "admin.teams.list", values)
+	if err != nil {
+		return nil, err
+	}
+	return response.Teams, nil
+}
